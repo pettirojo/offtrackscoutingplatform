@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dossier — Scouting Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<!-- Use jsdelivr (more reliable than cdnjs) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="grid-overlay" aria-hidden="true"></div>
+
+<header class="masthead">
+  <div class="status-badge"><span class="pulse-dot"></span>LIVE FEED</div>
+  <h1>Dossier<span class="cursor-blink">_</span></h1>
+  <p class="tagline">Hold-up · Clutch · System fit — one scouting terminal, three lenses</p>
+  <div class="comp-picker">
+    <label for="competition-select">Competition</label>
+    <select id="competition-select"></select>
+  </div>
+</header>
+
+<div class="ticker-wrap" aria-hidden="true">
+  <div class="ticker-track" id="ticker-track">
+    <span class="ticker-item"><span class="sym">BOOTING SCOUTING FEED…</span></span>
+  </div>
+</div>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="player">Player Report</button>
+  <button class="tab-btn" data-tab="players">Players</button>
+  <button class="tab-btn" data-tab="scatter">League Scouting</button>
+  <button class="tab-btn" data-tab="teams">Team Structure</button>
+  <button class="tab-btn" data-tab="leap">Player Leap</button>
+</nav>
+
+<main>
+
+  <!-- TAB 1: PLAYER REPORT -->
+  <section id="player-tab" class="tab-content active">
+    <div class="search-row">
+      <input type="text" id="player-search" placeholder="Search a player name…">
+      <button id="search-btn">Pull file</button>
+    </div>
+    <p id="player-error" class="error-msg"></p>
+
+    <article id="player-profile" class="dossier hidden">
+      <div class="dossier-head">
+        <div>
+          <div class="eyebrow">Subject</div>
+          <h2 id="player-name">—</h2>
+          <div class="subline" id="player-team">—</div>
+        </div>
+        <div class="verdict" id="player-verdict">—</div>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Usage Rate</div>
+          <div class="metric-value" id="p-usage">—</div>
+          <div class="metric-note">share of team's attacking actions</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Hold-Up Success</div>
+          <div class="metric-value" id="p-hold-up">—</div>
+          <div class="metric-note"><span id="p-hold-up-att">0</span> attempts on file</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Net Clutch Score</div>
+          <div class="metric-value" id="p-clutch">—</div>
+          <div class="metric-note">weighted goals minus weighted misses</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Wall Actions</div>
+          <div class="metric-value" id="p-wall">—</div>
+          <div class="metric-note">holds &gt;2s, per 90 min</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Minutes Played</div>
+          <div class="metric-value" id="p-minutes">—</div>
+          <div class="metric-note"><span id="p-matches">0</span> matches on file</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Goals per 90</div>
+          <div class="metric-value" id="p-goals-per90">—</div>
+          <div class="metric-note"><span id="p-goals-total">0</span> goals total</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Finishing (G − xG)</div>
+          <div class="metric-value" id="p-finishing">—</div>
+          <div class="metric-note">xG on file: <span id="p-xg">0</span></div>
+        </div>
+      </div>
+
+      <div class="chart-row">
+        <div class="chart-box">
+          <h4>Clutch Profile</h4>
+          <div class="chart-canvas-wrap"><canvas id="clutchRadar"></canvas></div>
+        </div>
+        <div class="chart-box">
+          <h4>Usage vs Team</h4>
+          <div class="chart-canvas-wrap"><canvas id="usageBar"></canvas></div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- TAB 2: PLAYERS TABLE -->
+  <section id="players-tab" class="tab-content">
+    <div class="table-controls">
+      <input type="text" id="player-filter" placeholder="Filter by name or team…">
+      <button id="compare-btn" disabled>Compare Selected</button>
+      <span id="selection-count">0 selected</span>
+    </div>
+    <div class="table-wrapper">
+      <table id="players-table">
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="select-all"></th>
+            <th data-sort="player_name">Player</th>
+            <th data-sort="team_name">Team</th>
+            <th data-sort="matches_played">Matches</th>
+            <th data-sort="minutes_played">Min</th>
+            <th data-sort="goals">Goals</th>
+            <th data-sort="goals_per90">Goals/90</th>
+            <th data-sort="finishing_efficiency">G−xG</th>
+            <th data-sort="usage_rate">Usage %</th>
+            <th data-sort="hold_up_success_rate">Hold-Up %</th>
+            <th data-sort="net_clutch_score">Clutch</th>
+            <th data-sort="shot_creating_actions">SCA/90</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- TAB 3: LEAGUE SCATTER -->
+  <section id="scatter-tab" class="tab-content">
+    <p class="section-note">Minimum goals threshold applied so the matrices only surface players with a real sample size.</p>
+    <div class="chart-grid-6">
+      <div class="chart-box">
+        <h4>The Clutch Matrix — Difficulty × Importance</h4>
+        <div class="chart-canvas-wrap"><canvas id="scatterClutch"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <h4>The Usage Matrix — Usage × Output</h4>
+        <div class="chart-canvas-wrap"><canvas id="scatterUsage"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <h4>Top Scorers</h4>
+        <div class="chart-canvas-wrap"><canvas id="topScorersChart"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <h4>Finishing Leaderboard — G − xG</h4>
+        <div class="chart-canvas-wrap"><canvas id="finishingChart"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <h4>Clutch Leaderboard — Net Score</h4>
+        <div class="chart-canvas-wrap"><canvas id="clutchLeaderboardChart"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <h4>Usage vs Finishing (bubble size = goals)</h4>
+        <div class="chart-canvas-wrap"><canvas id="usageFinishingChart"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 4: TEAM STRUCTURE -->
+  <section id="teams-tab" class="tab-content">
+    <p class="section-note">Heliocentricity: gap between a team's top and second usage rate. Higher means more star-dependent.</p>
+    <table id="team-table">
+      <thead>
+        <tr>
+          <th>Team</th>
+          <th>Top Usage Player</th>
+          <th>Heliocentricity</th>
+          <th>Creativity Gap</th>
+          <th>System Read</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <!-- TAB 5: PLAYER LEAP -->
+  <section id="leap-tab" class="tab-content">
+    <p class="section-note">
+      Season-over-season deltas within the same competition. Requires two
+      seasons of that league to be processed and diffed (see README /
+      <code>python run.py --leap</code>).
+    </p>
+    <div class="table-controls">
+      <label for="leap-season1" class="comp-picker-inline">From</label>
+      <select id="leap-season1"></select>
+      <label for="leap-season2" class="comp-picker-inline">To</label>
+      <select id="leap-season2"></select>
+    </div>
+    <p id="leap-empty" class="section-note hidden">
+      No leap data for this season pair yet. Run <code>python run.py --leap</code>
+      after processing both seasons.
+    </p>
+    <div class="table-wrapper">
+      <table id="leap-table">
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>Usage % (S1 → S2)</th>
+            <th>Δ Usage</th>
+            <th>SCA/90 (S1 → S2)</th>
+            <th>Δ SCA/90</th>
+            <th>Category</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<!-- COMPARE MODAL -->
+<div id="compare-modal" class="modal hidden">
+  <div class="modal-content">
+    <span class="close-modal">&times;</span>
+    <h3>Player Comparison</h3>
+    <div id="compare-container"></div>
+  </div>
+</div>
+
+<footer>
+  <span>Data: local match CSVs · Model: hold-up, clutch and usage engines running locally</span>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
