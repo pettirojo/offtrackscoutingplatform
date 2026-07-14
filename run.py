@@ -68,7 +68,7 @@ def main():
               f"or --competition <name> to add another competition.\n")
 
     # Ensure schema is up-to-date (adds missing columns)
-    init_db()
+    #init_db()
 
     # Import app AFTER data building so a slow first-run doesn't hold a port open pointlessly.
     from app import app
